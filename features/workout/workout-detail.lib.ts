@@ -4,6 +4,7 @@
  * DB rows are loosely typed upstream, so the consumed shape is declared here.
  */
 import type { IntensityZone } from "@/constants/zones";
+import type { DrylandCategory } from "@/types/workout";
 
 export interface PoolSet {
   id: string;
@@ -16,7 +17,7 @@ export interface PoolSet {
 
 export interface DrylandSession {
   duration_min: number;
-  category: string;
+  category: DrylandCategory;
   description: string | null;
 }
 

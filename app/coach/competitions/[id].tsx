@@ -36,11 +36,11 @@ export default function CompetitionDetailScreen() {
   const swimmers = swimmersQ.data ?? [];
 
   const [modalVisible, setModalVisible] = useState(false);
-  const [entry, setEntry] = useState<Partial<ResultEntry>>({ stroke: "vapaa", distance: 100, timeString: "" });
+  const [entry, setEntry] = useState<Partial<ResultEntry>>({ stroke: "vapaa", distance: "100", timeString: "" });
   const [saveError, setSaveError] = useState("");
 
   function openModal(swimmerId?: string, swimmerName?: string) {
-    setEntry({ swimmerId, swimmerName, stroke: "vapaa", distance: 100, timeString: "", placeOverall: "" });
+    setEntry({ swimmerId, swimmerName, stroke: "vapaa", distance: "100", timeString: "", placeOverall: "" });
     setSaveError("");
     setModalVisible(true);
   }
@@ -60,7 +60,7 @@ export default function CompetitionDetailScreen() {
         competitionDate: competition.competition_date,
         swimmerId: entry.swimmerId,
         stroke: entry.stroke!,
-        distance: String(entry.distance),
+        distance: entry.distance!,
         resultTimeMs: timeMs,
         placeOverall: entry.placeOverall ? parseInt(entry.placeOverall) : undefined,
       });

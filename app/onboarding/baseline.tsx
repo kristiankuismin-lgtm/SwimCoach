@@ -13,7 +13,7 @@ export default function BaselineScreen() {
   const { data, setData } = useOnboardingStore();
 
   const [stroke, setStroke] = useState<SwimStroke>("vapaa");
-  const [distance, setDistance] = useState<RaceDistance>(100);
+  const [distance, setDistance] = useState<RaceDistance>("100");
   const [time, setTime] = useState("");
   const [addError, setAddError] = useState("");
 

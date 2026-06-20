@@ -98,9 +98,10 @@ async function mostImproved(clubId: string, summaries: any[]): Promise<string> {
 
   if (!data || data.length === 0) return "Kisatuloksia ei löydy vielä.";
 
-  // Best improvement per swimmer
+  // Best improvement per swimmer (view columns are nullable, so skip rows without an id)
   const best: Record<string, any> = {};
   for (const r of data) {
+    if (!r.swimmer_id) continue;
     if (!best[r.swimmer_id] || r.improvement_pct > best[r.swimmer_id].improvement_pct) {
       best[r.swimmer_id] = r;
     }

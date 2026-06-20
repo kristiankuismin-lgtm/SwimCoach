@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import type { SwimStroke, RaceDistance } from "@/constants/strokes";
 import type { YearlyGoal } from "@/features/swimmer/swimmer-detail.lib";
 
 export const goalKeys = {
@@ -30,8 +31,8 @@ export async function upsertYearlyGoal(goal: {
   target_pct_vk?: number;
   target_pct_mk?: number;
   target_pct_mak?: number;
-  target_stroke?: string;
-  target_distance?: string;
+  target_stroke?: SwimStroke;
+  target_distance?: RaceDistance;
   target_time_ms?: number;
 }) {
   return supabase

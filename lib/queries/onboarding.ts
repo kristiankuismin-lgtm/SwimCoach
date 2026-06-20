@@ -27,7 +27,7 @@ export async function saveOnboarding({ swimmerId, data }: SaveOnboardingInput) {
     target_pct_mk: data.targetPctMk,
     target_pct_mak: data.targetPctMak,
     target_stroke: data.goalStroke,
-    target_distance: String(data.goalDistance),
+    target_distance: data.goalDistance,
     target_time_ms: data.goalTimeString ? timeStringToMs(data.goalTimeString) : undefined,
   });
   if (goalErr) throw goalErr;
@@ -38,7 +38,7 @@ export async function saveOnboarding({ swimmerId, data }: SaveOnboardingInput) {
       data.baselines.map((b) => ({
         swimmer_id: swimmerId,
         stroke: b.stroke,
-        distance: String(b.distance),
+        distance: b.distance,
         best_time_ms: timeStringToMs(b.timeString),
         set_at: setAt,
         is_baseline: true,

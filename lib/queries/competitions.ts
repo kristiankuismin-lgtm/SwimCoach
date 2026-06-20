@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { swimmerKeys } from "@/lib/queries/swimmers";
+import type { SwimStroke, RaceDistance } from "@/constants/strokes";
 import type { Competition, CompetitionWithResults } from "@/features/competition/competitions.lib";
 
 export const competitionKeys = {
@@ -58,8 +59,8 @@ export interface SaveResultInput {
   competitionId: string;
   competitionDate: string;
   swimmerId: string;
-  stroke: string;
-  distance: string;
+  stroke: SwimStroke;
+  distance: RaceDistance;
   resultTimeMs: number;
   placeOverall?: number;
 }
@@ -129,8 +130,8 @@ export async function createCompetition(data: {
 export async function upsertCompetitionResult(result: {
   competition_id: string;
   swimmer_id: string;
-  stroke: string;
-  distance: string;
+  stroke: SwimStroke;
+  distance: RaceDistance;
   result_time_ms: number;
   place_overall?: number;
   place_age_group?: number;
@@ -145,8 +146,8 @@ export async function upsertCompetitionResult(result: {
 
 export async function updatePersonalRecord(
   swimmerId: string,
-  stroke: string,
-  distance: string,
+  stroke: SwimStroke,
+  distance: RaceDistance,
   timeMs: number,
   competitionDate: string,
   competitionId: string

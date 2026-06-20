@@ -35,6 +35,6 @@ export const defaultOnboardingData: OnboardingData = {
   targetPctMk: 15,
   targetPctMak: 10,
   goalStroke: "vapaa",
-  goalDistance: 100,
+  goalDistance: "100",
   goalTimeString: "",
 };

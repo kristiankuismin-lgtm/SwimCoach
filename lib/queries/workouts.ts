@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { swimmerKeys } from "@/lib/queries/swimmers";
+import type { SwimStroke } from "@/constants/strokes";
+import type { IntensityZone } from "@/constants/zones";
+import type { DrylandCategory } from "@/types/workout";
 import type { WorkoutDetail } from "@/features/workout/workout-detail.lib";
 
 export const workoutKeys = {
@@ -34,11 +37,11 @@ export interface SaveWorkoutInput {
     set_order: number;
     repetitions: number;
     distance_m: number;
-    stroke?: string;
-    intensity_zone: string;
+    stroke?: SwimStroke;
+    intensity_zone: IntensityZone;
     description?: string;
   }>;
-  dryland?: { duration_min: number; category: string; description?: string };
+  dryland?: { duration_min: number; category: DrylandCategory; description?: string };
   attendance: Array<{ swimmer_id: string; actual_pool_m: number }>;
 }
 
@@ -101,8 +104,8 @@ export async function addPoolSets(sets: Array<{
   set_order: number;
   repetitions: number;
   distance_m: number;
-  stroke?: string;
-  intensity_zone: string;
+  stroke?: SwimStroke;
+  intensity_zone: IntensityZone;
   description?: string;
 }>) {
   return supabase.from("pool_sets").insert(sets).select();
@@ -122,7 +125,7 @@ export async function getGroupWorkouts(clubId: string, groupId?: string, limit =
 export async function addDrylandSession(s: {
   workout_id: string;
   duration_min: number;
-  category: string;
+  category: DrylandCategory;
   description?: string;
 }) {
   return supabase.from("dryland_sessions").insert(s);
