@@ -3,7 +3,6 @@ import { useRouter } from "expo-router";
 import { Screen } from "@/components/ui/Screen";
 import { ScreenState } from "@/components/ui/ScreenState";
 import { RosterScreen, type RosterDensity } from "@/features/swimmer/RosterScreen";
-import { useAuth } from "@/hooks/useAuth";
 import { useCoachContext } from "@/hooks/useCoachContext";
 import { useSeasonSummary } from "@/lib/queries/swimmers";
 import { useClubGroups } from "@/lib/queries/groups";
@@ -12,7 +11,6 @@ import { seasonProgress } from "@/lib/utils/season";
 
 export default function CoachDashboard() {
   const router = useRouter();
-  const { signOut } = useAuth();
   const { clubId, ready } = useCoachContext();
   const year = new Date().getFullYear();
   const progress = seasonProgress(new Date());
@@ -43,7 +41,6 @@ export default function CoachDashboard() {
             seasonProgress={progress}
             refreshing={summaryQ.isRefetching}
             onRefresh={() => summaryQ.refetch()}
-            onSignOut={signOut}
             onOpenSwimmer={(id) => router.push(`/coach/swimmers/${id}`)}
             onNewWorkout={() => router.push("/coach/workout/new")}
           />

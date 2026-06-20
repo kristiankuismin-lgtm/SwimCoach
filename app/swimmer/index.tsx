@@ -1,4 +1,3 @@
-import { useAuth } from "@/hooks/useAuth";
 import { useSwimmerContext } from "@/hooks/useSwimmerContext";
 import { useSwimmerProfile, useRecentWorkouts } from "@/lib/queries/swimmers";
 import { SwimmerHome } from "@/features/swimmer/SwimmerHome";
@@ -6,7 +5,6 @@ import { Screen } from "@/components/ui/Screen";
 import { PaceClock } from "@/components/ui/PaceClock";
 
 export default function SwimmerDashboard() {
-  const { signOut } = useAuth();
   const { swimmerId, ready } = useSwimmerContext();
   const year = new Date().getFullYear();
 
@@ -33,7 +31,6 @@ export default function SwimmerDashboard() {
       year={year}
       refreshing={profileQ.isRefetching || workoutsQ.isRefetching}
       onRefresh={refresh}
-      onSignOut={() => signOut()}
     />
   );
 }

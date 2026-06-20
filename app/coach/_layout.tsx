@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import { StyleSheet } from "react-native";
-import { Home, Plus, Trophy, Sparkles } from "lucide-react-native";
+import { Home, Plus, Trophy, Sparkles, User } from "lucide-react-native";
 import { TabIcon } from "@/components/ui/TabIcon";
 import { color } from "@/constants/theme";
 
@@ -30,6 +30,8 @@ export default function CoachLayout() {
         options={{ tabBarIcon: ({ focused }) => <TabIcon icon={Trophy} label="Kisat" focused={focused} /> }} />
       <Tabs.Screen name="copilot"
         options={{ tabBarIcon: ({ focused }) => <TabIcon icon={Sparkles} label="AI" focused={focused} /> }} />
+      <Tabs.Screen name="account"
+        options={{ tabBarIcon: ({ focused }) => <TabIcon icon={User} label="Tili" focused={focused} /> }} />
 
       {/* Piilotetut screenit — ei näy tab-barissa */}
       <Tabs.Screen name="workout/[id]"      options={HIDDEN} />

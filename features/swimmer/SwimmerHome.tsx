@@ -1,5 +1,5 @@
 import {
-  View, ScrollView, TouchableOpacity, RefreshControl, StyleSheet, type DimensionValue,
+  View, ScrollView, RefreshControl, StyleSheet, type DimensionValue,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "@/components/ui/Text";
@@ -17,7 +17,6 @@ interface Props {
   year: number;
   refreshing: boolean;
   onRefresh: () => void;
-  onSignOut: () => void;
 }
 
 /**
@@ -27,7 +26,7 @@ interface Props {
  * duplicated the tabs one level down). The full goal spec lives in Tavoitteet;
  * here it's progress-against-goal plus the target race as a glanceable north star.
  */
-export function SwimmerHome({ profile, recentWorkouts, year, refreshing, onRefresh, onSignOut }: Props) {
+export function SwimmerHome({ profile, recentWorkouts, year, refreshing, onRefresh }: Props) {
   const insets = useSafeAreaInsets();
 
   const goal = goalForYear(profile, year);
@@ -41,9 +40,6 @@ export function SwimmerHome({ profile, recentWorkouts, year, refreshing, onRefre
           <Text variant="title" style={s.headerName}>{profile.full_name}</Text>
           <Text variant="caption" color={color.inkFaint} style={s.headerSub}>Kausi {year}</Text>
         </View>
-        <TouchableOpacity onPress={onSignOut} style={s.logoutBtn}>
-          <Text variant="caption" color={color.inkFaint}>Kirjaudu ulos</Text>
-        </TouchableOpacity>
         {goal?.target_stroke && (
           <View style={s.goalBadge}>
             <Text variant="label" color={color.primary}>Tavoite</Text>
@@ -118,7 +114,6 @@ const s = StyleSheet.create({
   header:          { backgroundColor: color.surface, paddingBottom: space.md, paddingHorizontal: space.xl, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: color.border },
   headerName:      {},
   headerSub:       { marginTop: 2 },
-  logoutBtn:       { paddingHorizontal: space.md, paddingVertical: space.xs + 2, borderRadius: radius.xl, borderWidth: 1, borderColor: color.border },
   goalBadge:       { backgroundColor: color.primaryWash, borderRadius: radius.md, paddingHorizontal: space.md, paddingVertical: space.sm, alignItems: "flex-end" },
   goalBadgeValue:  {},
   scroll:          { flex: 1 },

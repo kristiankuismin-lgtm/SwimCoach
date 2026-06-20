@@ -8,10 +8,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { SwimmerCard } from "@/features/swimmer/SwimmerCard";
 import { SwimmerListRow } from "@/features/swimmer/SwimmerListRow";
 import { LensTabs } from "@/features/swimmer/LensTabs";
-import { AttentionStrip } from "@/features/swimmer/AttentionStrip";
 import { type SwimmerSummary, type LensKey, rankSwimmers } from "@/features/swimmer/swimmer-card.lib";
 import { filterRoster } from "@/features/swimmer/roster.lib";
-import { rosterAttention } from "@/features/swimmer/roster-attention.lib";
 import { color, space, radius, shadow } from "@/constants/theme";
 
 export type RosterDensity = "cards" | "list";
@@ -30,33 +28,30 @@ interface Props {
   seasonProgress: number;
   refreshing: boolean;
   onRefresh: () => void;
-  onSignOut: () => void;
   onOpenSwimmer: (id: string) => void;
   onNewWorkout: () => void;
 }
 
 /**
- * Koti — the coach's attention-first landing. The triage strip leads (it's the
- * point of the screen); the roster controls follow; the swimmer count and the
- * card/list density toggle sit with the list itself. One roster carrying both
- * densities + a name search, so the old separate "Uimarit" tab folds in here.
+ * Koti — the coach's roster landing. The lens ranks the swimmers (who's lagging
+ * sorts to the ends), so the list itself is the read on who needs a look; the
+ * swimmer count and the card/list density toggle sit with the list. One roster
+ * carrying both densities + a name search, so the old separate "Uimarit" tab
+ * folds in here. (An explicit "needs attention" surface is a later deliverable.)
  */
 export function RosterScreen({
   swimmers, groups, lens, onLens, selectedGroup, onSelectGroup,
   search, onSearch, density, onDensity,
-  seasonProgress, refreshing, onRefresh, onSignOut, onOpenSwimmer, onNewWorkout,
+  seasonProgress, refreshing, onRefresh, onOpenSwimmer, onNewWorkout,
 }: Props) {
   const ranked = rankSwimmers(lens, swimmers);
-  const attention = rosterAttention(swimmers, seasonProgress);
   const visible = filterRoster(ranked, search);
   const searching = search.trim().length > 0;
 
   return (
     <View style={s.root}>
-      <Header title="Koti" right={<Chip label="Kirjaudu ulos" onPress={onSignOut} />}>
+      <Header title="Koti">
         <View style={s.headerBody}>
-          <AttentionStrip items={attention} onOpenSwimmer={onOpenSwimmer} cap={4} />
-
           <Field placeholder="Hae nimellä…" value={search} onChangeText={onSearch} />
 
           {groups.length > 1 && (
