@@ -24,10 +24,10 @@ export default function CoachLayout() {
     >
       <Tabs.Screen name="index"
         options={{ tabBarIcon: ({ focused }) => <TabIcon icon={Home} label="Koti" focused={focused} /> }} />
-      <Tabs.Screen name="workout/new"
-        options={{ tabBarIcon: ({ focused }) => <TabIcon icon={Plus} label="Harjoitus" focused={focused} /> }} />
       <Tabs.Screen name="competitions"
         options={{ tabBarIcon: ({ focused }) => <TabIcon icon={Trophy} label="Kisat" focused={focused} /> }} />
+      <Tabs.Screen name="workout/new"
+        options={{ tabBarIcon: ({ focused }) => <TabIcon icon={Plus} label="Harjoitus" focused={focused} /> }} />
       <Tabs.Screen name="copilot"
         options={{ tabBarIcon: ({ focused }) => <TabIcon icon={Sparkles} label="AI" focused={focused} /> }} />
       <Tabs.Screen name="account"
