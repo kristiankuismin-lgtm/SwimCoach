@@ -19,6 +19,16 @@ const screenW = Dimensions.get("window").width;
 const MAX_W = screenW >= 1280 ? screenW * 0.85 : screenW >= 1024 ? screenW * 0.90 : screenW >= 640 ? 640 : 480;
 
 export default function RootLayout() {
+  // The provider must sit ABOVE everything that uses TanStack Query — including
+  // useAuth (its role lookup is a query). So the app's hooks live in a child.
+  return (
+    <QueryClientProvider client={queryClient}>
+      <RootNavigator />
+    </QueryClientProvider>
+  );
+}
+
+function RootNavigator() {
   const { session, role, loading } = useAuth();
   const router = useRouter();
   const segments = useSegments();
@@ -82,5 +92,5 @@ export default function RootLayout() {
     </View>
   ) : stack;
 
-  return <QueryClientProvider client={queryClient}>{content}</QueryClientProvider>;
+  return content;
 }
