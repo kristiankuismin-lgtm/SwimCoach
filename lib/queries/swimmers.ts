@@ -1,4 +1,24 @@
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+
+/** Query-key factory — the single source of truth for invalidation. */
+export const swimmerKeys = {
+  all: ["swimmers"] as const,
+  seasonSummary: (clubId: string, year: number) => [...swimmerKeys.all, "season-summary", clubId, year] as const,
+};
+
+/** Coach roster: every swimmer's season summary for the club. */
+export function useSeasonSummary(clubId: string | undefined, year: number) {
+  return useQuery({
+    queryKey: swimmerKeys.seasonSummary(clubId ?? "", year),
+    enabled: !!clubId,
+    queryFn: async () => {
+      const { data, error } = await getSwimmerSeasonSummary(clubId!, year);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
 
 export async function getSwimmerSeasonSummary(clubId: string, year?: number) {
   const season = year ?? new Date().getFullYear();

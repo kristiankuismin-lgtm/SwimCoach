@@ -1,19 +1,18 @@
-import { useEffect, useState, useCallback } from "react";
-import {
-  View, ScrollView, TouchableOpacity, RefreshControl, StyleSheet,
-} from "react-native";
+import { useEffect, useState } from "react";
+import { View, ScrollView, TouchableOpacity, RefreshControl, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Waves } from "lucide-react-native";
 import { SwimmerCard } from "@/features/swimmer/SwimmerCard";
+import { RosterStats } from "@/features/swimmer/RosterStats";
+import { LensTabs } from "@/features/swimmer/LensTabs";
 import { Text } from "@/components/ui/Text";
 import { PaceClock } from "@/components/ui/PaceClock";
 import { useCoachContext } from "@/hooks/useCoachContext";
-import { getSwimmerSeasonSummary } from "@/lib/queries/swimmers";
-import { getClubGroups } from "@/lib/queries/groups";
+import { useSeasonSummary, swimmerKeys } from "@/lib/queries/swimmers";
+import { useClubGroups } from "@/lib/queries/groups";
 import { supabase } from "@/lib/supabase";
-import {
-  type SwimmerSummary, type LensKey, LENSES, rankSwimmers, km,
-} from "@/features/swimmer/swimmer-card.lib";
+import { type SwimmerSummary, type LensKey, rankSwimmers, km } from "@/features/swimmer/swimmer-card.lib";
 import { color, space, radius, shadow } from "@/constants/theme";
 
 function seasonProgressNow(): number {
@@ -25,45 +24,31 @@ function seasonProgressNow(): number {
 
 export default function CoachDashboard() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { clubId, ready } = useCoachContext();
-
-  const [swimmers, setSwimmers] = useState<SwimmerSummary[]>([]);
-  const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
-  const [lens, setLens] = useState<LensKey>("goal");
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
   const year = new Date().getFullYear();
   const seasonProgress = seasonProgressNow();
 
-  const load = useCallback(async () => {
-    if (!clubId) return;
-    const [sumRes, grpRes] = await Promise.all([
-      getSwimmerSeasonSummary(clubId, year),
-      getClubGroups(clubId),
-    ]);
-    if (sumRes.data) setSwimmers(sumRes.data as SwimmerSummary[]);
-    if (grpRes.data) setGroups(grpRes.data);
-    setLoading(false);
-  }, [clubId, year]);
+  const [lens, setLens] = useState<LensKey>("goal");
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
-  useEffect(() => { if (ready) load(); }, [ready, load]);
+  const summaryQ = useSeasonSummary(ready ? clubId : undefined, year);
+  const groupsQ = useClubGroups(ready ? clubId : undefined);
 
+  // Realtime: a logged attendance changes the season summary — invalidate, don't refetch by hand.
   useEffect(() => {
     if (!clubId) return;
     const channel = supabase
       .channel("coach-dashboard")
-      .on("postgres_changes", { event: "*", schema: "public", table: "workout_attendance" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "workout_attendance" }, () =>
+        queryClient.invalidateQueries({ queryKey: swimmerKeys.seasonSummary(clubId, year) }),
+      )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [clubId, load]);
+  }, [clubId, year, queryClient]);
 
-  async function onRefresh() {
-    setRefreshing(true);
-    await load();
-    setRefreshing(false);
-  }
-
+  const swimmers = (summaryQ.data ?? []) as SwimmerSummary[];
+  const groups = groupsQ.data ?? [];
   const ranked = rankSwimmers(lens, swimmers);
 
   const totalPoolKm = km(ranked.reduce((acc, x) => acc + (x.total_pool_m ?? 0), 0));
@@ -74,17 +59,23 @@ export default function CoachDashboard() {
       }, 0) / ranked.length)
     : 0;
 
-  if (loading) {
+  if (!ready || summaryQ.isLoading) {
+    return <View style={s.center}><PaceClock size={48} /></View>;
+  }
+
+  if (summaryQ.isError) {
     return (
       <View style={s.center}>
-        <PaceClock size={48} />
+        <Text variant="body" color={color.inkMuted}>Tietojen lataus epäonnistui.</Text>
+        <TouchableOpacity onPress={() => summaryQ.refetch()} style={s.retryBtn}>
+          <Text variant="bodyStrong" color={color.primary}>Yritä uudelleen</Text>
+        </TouchableOpacity>
       </View>
     );
   }
 
   return (
     <View style={s.root}>
-      {/* Header */}
       <View style={s.header}>
         <View style={s.headerTop}>
           <Text variant="title">Uimarit</Text>
@@ -93,25 +84,12 @@ export default function CoachDashboard() {
           </TouchableOpacity>
         </View>
 
-        {/* Season stats */}
-        <View style={s.statsRow}>
-          <View style={s.statCard}>
-            <Text variant="label">Yhteensä uitu</Text>
-            <Text variant="statValue" style={s.statValue}>{totalPoolKm}<Text variant="caption" color={color.inkFaint}> km</Text></Text>
-          </View>
-          <View style={s.statCard}>
-            <Text variant="label">Tavoite keskim.</Text>
-            <Text variant="statValue" style={s.statValue} color={color.primaryInk}>{avgGoalPct}<Text variant="caption" color={color.inkFaint}> %</Text></Text>
-          </View>
-          <View style={s.statCard}>
-            <Text variant="label">Uimareita</Text>
-            <Text variant="statValue" style={s.statValue}>{ranked.length}</Text>
-          </View>
+        <View style={s.section}>
+          <RosterStats totalKm={totalPoolKm} avgGoalPct={avgGoalPct} count={ranked.length} />
         </View>
 
-        {/* Group filter */}
         {groups.length > 1 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterScroll}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.section}>
             <View style={s.filterRow}>
               <Chip label="Kaikki" active={!selectedGroup} onPress={() => setSelectedGroup(null)} />
               {groups.map((g) => (
@@ -121,29 +99,15 @@ export default function CoachDashboard() {
           </ScrollView>
         )}
 
-        {/* Lens — what to rank and headline by */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={s.lensRow}>
-            {LENSES.map((l) => (
-              <TouchableOpacity
-                key={l.key}
-                onPress={() => setLens(l.key)}
-                style={[s.lensChip, lens === l.key && s.lensChipActive]}
-              >
-                <Text variant="caption" color={lens === l.key ? color.onPrimary : color.inkMuted}>
-                  {l.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
+        <LensTabs value={lens} onChange={setLens} />
       </View>
 
-      {/* Roster */}
       <ScrollView
         style={s.list}
         contentContainerStyle={s.listContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={color.primary} />}
+        refreshControl={
+          <RefreshControl refreshing={summaryQ.isRefetching} onRefresh={() => summaryQ.refetch()} tintColor={color.primary} />
+        }
       >
         {ranked.length === 0 ? (
           <View style={s.empty}>
@@ -169,7 +133,6 @@ export default function CoachDashboard() {
         <View style={{ height: 96 }} />
       </ScrollView>
 
-      {/* New workout */}
       <TouchableOpacity style={s.fab} onPress={() => router.push("/coach/workout/new")}>
         <Plus size={18} color={color.onPrimary} strokeWidth={2.5} />
         <Text variant="bodyStrong" color={color.onPrimary}>Harjoitus</Text>
@@ -188,7 +151,8 @@ function Chip({ label, active, onPress }: { label: string; active: boolean; onPr
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: color.bg },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: color.bg },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: color.bg, gap: space.md },
+  retryBtn: { paddingHorizontal: space.lg, paddingVertical: space.sm },
   header: {
     backgroundColor: color.surface,
     paddingTop: 56,
@@ -198,17 +162,11 @@ const s = StyleSheet.create({
     borderBottomColor: color.border,
   },
   headerTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: space.lg },
+  section: { marginBottom: space.md },
   logoutBtn: { paddingHorizontal: space.md, paddingVertical: space.xs, borderRadius: radius.pill, borderWidth: 1, borderColor: color.border },
-  statsRow: { flexDirection: "row", gap: space.sm, marginBottom: space.md },
-  statCard: { flex: 1, borderRadius: radius.md, padding: space.md, backgroundColor: color.surfaceAlt, borderWidth: StyleSheet.hairlineWidth, borderColor: color.border },
-  statValue: { marginTop: 2 },
-  filterScroll: { marginBottom: space.sm },
   filterRow: { flexDirection: "row", gap: space.sm },
   filterChip: { paddingHorizontal: space.md, paddingVertical: space.xs, borderRadius: radius.pill, borderWidth: 1, borderColor: color.border, backgroundColor: color.surface },
   filterChipActive: { backgroundColor: color.primary, borderColor: color.primary },
-  lensRow: { flexDirection: "row", gap: space.sm },
-  lensChip: { paddingHorizontal: space.md, paddingVertical: space.sm, borderRadius: radius.pill, backgroundColor: color.bg },
-  lensChipActive: { backgroundColor: color.ink },
   list: { flex: 1 },
   listContent: { padding: space.lg },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: space.md },

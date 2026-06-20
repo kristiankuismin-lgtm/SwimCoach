@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { Platform, View, Dimensions, ActivityIndicator } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useFonts } from "expo-font";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "@/lib/query-client";
 import { SairaCondensed_600SemiBold, SairaCondensed_700Bold } from "@expo-google-fonts/saira-condensed";
 import {
   HankenGrotesk_400Regular,
@@ -66,21 +68,19 @@ export default function RootLayout() {
     </Stack>
   );
 
-  if (Platform.OS === "web") {
-    return (
-      <View style={{ flex: 1, backgroundColor: color.border, alignItems: "center" }}>
-        <View style={{
-          width: "100%",
-          maxWidth: MAX_W,
-          flex: 1,
-          backgroundColor: color.bg,
-          boxShadow: "0 0 40px rgba(11,42,58,0.10)",
-        }}>
-          {stack}
-        </View>
+  const content = Platform.OS === "web" ? (
+    <View style={{ flex: 1, backgroundColor: color.border, alignItems: "center" }}>
+      <View style={{
+        width: "100%",
+        maxWidth: MAX_W,
+        flex: 1,
+        backgroundColor: color.bg,
+        boxShadow: "0 0 40px rgba(11,42,58,0.10)",
+      }}>
+        {stack}
       </View>
-    );
-  }
+    </View>
+  ) : stack;
 
-  return stack;
+  return <QueryClientProvider client={queryClient}>{content}</QueryClientProvider>;
 }
