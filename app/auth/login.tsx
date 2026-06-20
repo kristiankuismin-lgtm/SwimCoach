@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
-import { supabase } from "@/lib/supabase";
+import { signIn } from "@/lib/queries/auth";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function signIn() {
+  async function submit() {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await signIn(email, password);
     if (error) Alert.alert("Virhe kirjautumisessa", error.message);
     setLoading(false);
   }
@@ -42,7 +42,7 @@ export default function LoginScreen() {
         />
         <TouchableOpacity
           style={[s.btn, loading && s.btnDisabled]}
-          onPress={signIn}
+          onPress={submit}
           disabled={loading}
         >
           <Text style={s.btnText}>

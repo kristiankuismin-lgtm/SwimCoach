@@ -38,12 +38,13 @@ export default function NewWorkoutScreen() {
     store.setGroupId(gid);
     const { data } = await getGroupMembers(gid);
     if (data) {
+      const members = data as { swimmer_id: string; swimmers: { full_name: string } | null }[];
       store.setAttendees(
-        data.map((m: any) => ({
+        members.map((m) => ({
           swimmer_id: m.swimmer_id,
           full_name: m.swimmers?.full_name ?? "Tuntematon",
           present: true,
-        }))
+        })),
       );
     }
   }

@@ -32,6 +32,10 @@ export async function getSwimmerContext(userId: string) {
   return { clubId: u?.club_id ?? null, swimmerId: s?.id ?? null };
 }
 
+export function signIn(email: string, password: string) {
+  return supabase.auth.signInWithPassword({ email, password });
+}
+
 export function signOut() {
   return supabase.auth.signOut();
 }
