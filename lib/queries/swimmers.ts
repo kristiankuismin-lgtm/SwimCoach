@@ -2,12 +2,17 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useRealtimeInvalidation } from "@/lib/realtime/useRealtimeInvalidation";
 import type { SwimmerSummary } from "@/features/swimmer/swimmer-card.lib";
+import type { ProgressionRow, SwimmerProfile } from "@/features/swimmer/swimmer-detail.lib";
 
 /** Query-key factory — the single source of truth for invalidation. */
 export const swimmerKeys = {
   all: ["swimmers"] as const,
   seasonSummary: (clubId: string, year: number) =>
     [...swimmerKeys.all, "season-summary", clubId, year] as const,
+  profile: (swimmerId: string) => [...swimmerKeys.all, "profile", swimmerId] as const,
+  progression: (swimmerId: string) => [...swimmerKeys.all, "progression", swimmerId] as const,
+  seasonDetail: (swimmerId: string, year: number) =>
+    [...swimmerKeys.all, "season-detail", swimmerId, year] as const,
 };
 
 /**
@@ -42,6 +47,45 @@ export async function getSwimmerSeasonSummary(clubId: string, year?: number) {
     .eq("season_year", season);
 }
 
+/** A swimmer's full profile (goals + PRs) for the detail screen. */
+export function useSwimmerProfile(swimmerId: string | undefined) {
+  return useQuery({
+    queryKey: swimmerKeys.profile(swimmerId ?? ""),
+    enabled: !!swimmerId,
+    queryFn: async () => {
+      const { data, error } = await getSwimmerProfile(swimmerId!);
+      if (error) throw error;
+      return data as SwimmerProfile;
+    },
+  });
+}
+
+/** A swimmer's competition time progression, chronological. */
+export function useTimeProgression(swimmerId: string | undefined) {
+  return useQuery({
+    queryKey: swimmerKeys.progression(swimmerId ?? ""),
+    enabled: !!swimmerId,
+    queryFn: async () => {
+      const { data, error } = await getTimeProgression(swimmerId!);
+      if (error) throw error;
+      return (data ?? []) as ProgressionRow[];
+    },
+  });
+}
+
+/** A single swimmer's season summary (null when there's no data yet). */
+export function useSwimmerSeasonDetail(swimmerId: string | undefined, year: number) {
+  return useQuery({
+    queryKey: swimmerKeys.seasonDetail(swimmerId ?? "", year),
+    enabled: !!swimmerId,
+    queryFn: async () => {
+      const { data, error } = await getSwimmerSeasonDetail(swimmerId!, year);
+      if (error) throw error;
+      return (data ?? null) as SwimmerSummary | null;
+    },
+  });
+}
+
 export async function getSwimmerProfile(swimmerId: string) {
   return supabase
     .from("swimmers")
@@ -68,7 +112,7 @@ export async function getSwimmerSeasonDetail(swimmerId: string, year: number) {
     .select("*")
     .eq("swimmer_id", swimmerId)
     .eq("season_year", year)
-    .single();
+    .maybeSingle();
 }
 
 export async function getRecentWorkouts(swimmerId: string, limit = 10) {
