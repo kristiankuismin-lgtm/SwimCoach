@@ -145,8 +145,7 @@ export default function CompetitionDetailScreen() {
         {Object.keys(bySwimmer).length === 0 ? (
           <View style={s.empty}>
             <Text style={s.emptyEmoji}>📋</Text>
-            <Text style={s.emptyText}>Ei tuloksia vielä.{"
-"}Lisää ensimmäinen tulos yllä.</Text>
+            <Text style={s.emptyText}>Ei tuloksia vielä. Lisää ensimmäinen tulos yllä.</Text>
           </View>
         ) : (
           Object.entries(bySwimmer).map(([sid, { name, results: sResults }]) => (
