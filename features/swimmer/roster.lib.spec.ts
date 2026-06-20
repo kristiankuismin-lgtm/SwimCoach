@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { filterRoster, rosterStats } from "./roster.lib";
+import { filterRoster } from "./roster.lib";
 import type { SwimmerSummary } from "./swimmer-card.lib";
 
 /** Minimal valid summary row; override only the fields a case cares about. */
@@ -23,31 +23,6 @@ function swimmer(over: Partial<SwimmerSummary>): SwimmerSummary {
     ...over,
   };
 }
-
-describe("rosterStats", () => {
-  it("returns zeros for an empty roster", () => {
-    expect(rosterStats([])).toEqual({ totalKm: 0, avgGoalPct: 0, count: 0 });
-  });
-
-  it("sums volume in km and averages goal completion", () => {
-    const r = rosterStats([
-      swimmer({ total_pool_m: 120_000, goal_pool_pct: 80 }),
-      swimmer({ total_pool_m: 80_000, goal_pool_pct: 60 }),
-    ]);
-    expect(r.count).toBe(2);
-    expect(r.totalKm).toBe(200); // 200_000 m → 200 km
-    expect(r.avgGoalPct).toBe(70); // (80 + 60) / 2
-  });
-
-  it("treats null volume as zero", () => {
-    const r = rosterStats([
-      swimmer({ total_pool_m: null, goal_pool_pct: 50 }),
-      swimmer({ total_pool_m: 50_000, goal_pool_pct: 50 }),
-    ]);
-    expect(r.totalKm).toBe(50);
-    expect(r.avgGoalPct).toBe(50);
-  });
-});
 
 describe("filterRoster", () => {
   const roster = [

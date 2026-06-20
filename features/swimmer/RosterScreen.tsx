@@ -7,11 +7,10 @@ import { Field } from "@/components/ui/Field";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SwimmerCard } from "@/features/swimmer/SwimmerCard";
 import { SwimmerListRow } from "@/features/swimmer/SwimmerListRow";
-import { RosterStats } from "@/features/swimmer/RosterStats";
 import { LensTabs } from "@/features/swimmer/LensTabs";
 import { AttentionStrip } from "@/features/swimmer/AttentionStrip";
 import { type SwimmerSummary, type LensKey, rankSwimmers } from "@/features/swimmer/swimmer-card.lib";
-import { rosterStats, filterRoster } from "@/features/swimmer/roster.lib";
+import { filterRoster } from "@/features/swimmer/roster.lib";
 import { rosterAttention } from "@/features/swimmer/roster-attention.lib";
 import { color, space, radius, shadow } from "@/constants/theme";
 
@@ -37,9 +36,10 @@ interface Props {
 }
 
 /**
- * Koti — the coach's attention-first landing. Triage strip over a single roster
- * that carries both densities (rich cards / compact rows) and a name search, so
- * the old separate "Uimarit" tab folds in here rather than duplicating this list.
+ * Koti — the coach's attention-first landing. The triage strip leads (it's the
+ * point of the screen); the roster controls follow; the swimmer count and the
+ * card/list density toggle sit with the list itself. One roster carrying both
+ * densities + a name search, so the old separate "Uimarit" tab folds in here.
  */
 export function RosterScreen({
   swimmers, groups, lens, onLens, selectedGroup, onSelectGroup,
@@ -47,7 +47,6 @@ export function RosterScreen({
   seasonProgress, refreshing, onRefresh, onSignOut, onOpenSwimmer, onNewWorkout,
 }: Props) {
   const ranked = rankSwimmers(lens, swimmers);
-  const stats = rosterStats(ranked);
   const attention = rosterAttention(swimmers, seasonProgress);
   const visible = filterRoster(ranked, search);
   const searching = search.trim().length > 0;
@@ -56,7 +55,7 @@ export function RosterScreen({
     <View style={s.root}>
       <Header title="Koti" right={<Chip label="Kirjaudu ulos" onPress={onSignOut} />}>
         <View style={s.headerBody}>
-          <RosterStats totalKm={stats.totalKm} avgGoalPct={stats.avgGoalPct} count={stats.count} />
+          <AttentionStrip items={attention} onOpenSwimmer={onOpenSwimmer} cap={4} />
 
           <Field placeholder="Hae nimellä…" value={search} onChangeText={onSearch} />
 
@@ -71,12 +70,7 @@ export function RosterScreen({
             </ScrollView>
           )}
 
-          <View style={s.controlRow}>
-            <View style={s.lensWrap}>
-              <LensTabs value={lens} onChange={onLens} />
-            </View>
-            <DensityToggle value={density} onChange={onDensity} />
-          </View>
+          <LensTabs value={lens} onChange={onLens} />
         </View>
       </Header>
 
@@ -85,32 +79,39 @@ export function RosterScreen({
         contentContainerStyle={s.listContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={color.primary} />}
       >
-        <AttentionStrip items={attention} onOpenSwimmer={onOpenSwimmer} />
-
         {visible.length === 0 ? (
           <EmptyState
             icon={Waves}
             text={searching ? "Ei osumia haulle." : "Ei uimareita vielä.\nLisää uimareita seuran hallinnasta."}
           />
-        ) : density === "list" ? (
-          <View>
-            {visible.map((sw) => (
-              <SwimmerListRow key={sw.swimmer_id} swimmer={sw} onPress={() => onOpenSwimmer(sw.swimmer_id)} />
-            ))}
-          </View>
         ) : (
-          <View style={s.grid}>
-            {visible.map((sw, i) => (
-              <SwimmerCard
-                key={sw.swimmer_id}
-                swimmer={sw}
-                lens={lens}
-                rank={i + 1}
-                seasonProgress={seasonProgress}
-                onPress={() => onOpenSwimmer(sw.swimmer_id)}
-              />
-            ))}
-          </View>
+          <>
+            <View style={s.listHead}>
+              <Text variant="label">{visible.length} {visible.length === 1 ? "uimari" : "uimaria"}</Text>
+              <DensityToggle value={density} onChange={onDensity} />
+            </View>
+
+            {density === "list" ? (
+              <View>
+                {visible.map((sw) => (
+                  <SwimmerListRow key={sw.swimmer_id} swimmer={sw} onPress={() => onOpenSwimmer(sw.swimmer_id)} />
+                ))}
+              </View>
+            ) : (
+              <View style={s.grid}>
+                {visible.map((sw, i) => (
+                  <SwimmerCard
+                    key={sw.swimmer_id}
+                    swimmer={sw}
+                    lens={lens}
+                    rank={i + 1}
+                    seasonProgress={seasonProgress}
+                    onPress={() => onOpenSwimmer(sw.swimmer_id)}
+                  />
+                ))}
+              </View>
+            )}
+          </>
         )}
         <View style={s.bottomSpacer} />
       </ScrollView>
@@ -146,13 +147,12 @@ const s = StyleSheet.create({
   root: { flex: 1 },
   headerBody: { gap: space.md, paddingHorizontal: space.lg, paddingBottom: space.xs },
   filterRow: { flexDirection: "row", gap: space.sm },
-  controlRow: { flexDirection: "row", alignItems: "center", gap: space.sm },
-  lensWrap: { flex: 1 },
+  list: { flex: 1 },
+  listContent: { padding: space.lg },
+  listHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: space.md },
   densityWrap: { flexDirection: "row", gap: 2, backgroundColor: color.bg, borderRadius: radius.pill, padding: 2 },
   densityBtn: { paddingHorizontal: space.sm, paddingVertical: space.xs + 1, borderRadius: radius.pill },
   densityBtnActive: { backgroundColor: color.ink },
-  list: { flex: 1 },
-  listContent: { padding: space.lg },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: space.md },
   bottomSpacer: { height: 96 },
   fab: {

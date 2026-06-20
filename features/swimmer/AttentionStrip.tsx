@@ -60,7 +60,6 @@ const s = StyleSheet.create({
     borderColor: color.border,
     paddingHorizontal: space.lg,
     paddingVertical: space.md,
-    marginBottom: space.md,
     ...shadow.card,
   },
   calm: { flexDirection: "row", alignItems: "center", gap: space.sm, justifyContent: "center" },
