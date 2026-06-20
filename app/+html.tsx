@@ -12,28 +12,6 @@ export default function Root({ children }: PropsWithChildren) {
           body { background: #f9fafb; margin: 0; }
           * { box-sizing: border-box; }
         ` }} />
-        <script dangerouslySetInnerHTML={{ __html: `
-          (function() {
-            var s = document.createElement('script');
-            s.src = 'https://cdn.tailwindcss.com';
-            s.onload = function() {
-              tailwind.config = {
-                theme: {
-                  extend: {
-                    colors: {
-                      pk: '#3B82F6',
-                      vk: '#22C55E',
-                      mk: '#EAB308',
-                      mak: '#EF4444',
-                      brand: '#0EA5E9'
-                    }
-                  }
-                }
-              };
-            };
-            document.head.appendChild(s);
-          })();
-        ` }} />
       </head>
       <body>{children}</body>
     </html>
