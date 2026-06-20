@@ -1,4 +1,4 @@
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { msToTimeString, improvementPct } from "@/lib/utils/time";
 
 interface DataPoint {
@@ -18,8 +18,8 @@ interface Props {
 export function TimeProgressionChart({ data, baseline_ms, label }: Props) {
   if (data.length === 0) {
     return (
-      <View className="py-6 items-center">
-        <Text className="text-gray-300 text-sm">Ei kisatuloksia vielä</Text>
+      <View style={s.empty}>
+        <Text style={s.emptyText}>Ei kisatuloksia vielä</Text>
       </View>
     );
   }
@@ -32,51 +32,47 @@ export function TimeProgressionChart({ data, baseline_ms, label }: Props) {
 
   return (
     <View>
-      <Text className="text-xs font-semibold text-gray-500 mb-3">{label}</Text>
+      <Text style={s.chartLabel}>{label}</Text>
 
-      {/* Graafi */}
-      <View style={{ height: chartH + 24 }} className="mb-2">
-        <View className="flex-row items-end gap-1" style={{ height: chartH }}>
+      <View style={{ height: chartH + 24, marginBottom: 8 }}>
+        <View style={[s.barsRow, { height: chartH }]}>
           {data.map((d, i) => {
             const barH = Math.max(8, ((maxTime - d.result_time_ms) / range) * chartH);
             const isPR = d.result_time_ms === minTime;
             return (
-              <View key={i} className="flex-1 items-center">
+              <View key={i} style={s.barCol}>
                 <View
-                  style={{ height: barH, backgroundColor: isPR ? "#22C55E" : "#0EA5E9" }}
-                  className="w-full rounded-t-md opacity-80"
+                  style={[
+                    s.bar,
+                    { height: barH, backgroundColor: isPR ? "#22C55E" : "#0EA5E9", opacity: 0.8 },
+                  ]}
                 />
               </View>
             );
           })}
         </View>
-        {/* Päivämäärä-akseli */}
-        <View className="flex-row gap-1 mt-1">
+        <View style={s.axisRow}>
           {data.map((d, i) => (
-            <Text key={i} className="flex-1 text-center text-gray-300"
-              style={{ fontSize: 8 }} numberOfLines={1}>
+            <Text key={i} style={s.axisLabel} numberOfLines={1}>
               {(d.competition_date || d.date || "").slice(5)}
             </Text>
           ))}
         </View>
       </View>
 
-      {/* Tuloshistoria */}
       {data.slice().reverse().slice(0, 5).map((d, i) => {
         const isPR = d.result_time_ms === minTime;
         const vsBaseline = baseline_ms ? improvementPct(baseline_ms, d.result_time_ms) : null;
         return (
-          <View key={i} className="flex-row items-center py-2 border-b border-gray-50">
-            <Text className="text-xs text-gray-400 w-20">{d.competition_date || d.date}</Text>
-            <Text className="flex-1 text-xs text-gray-500 mx-2" numberOfLines={1}>
-              {d.competition_name}
-            </Text>
-            <Text className={`font-bold text-sm ${isPR ? "text-green-500" : "text-gray-700"}`}>
+          <View key={i} style={s.row}>
+            <Text style={s.dateText}>{d.competition_date || d.date}</Text>
+            <Text style={s.nameText} numberOfLines={1}>{d.competition_name}</Text>
+            <Text style={[s.timeText, isPR && s.prTime]}>
               {msToTimeString(d.result_time_ms)}
             </Text>
-            {isPR && <Text className="text-xs text-green-400 ml-1">PR</Text>}
-            {vsBaseline != null && vsBaseline > 0 && (
-              <Text className="text-xs text-green-500 ml-2">−{vsBaseline}%</Text>
+            {isPR && <Text style={s.prBadge}>PR</Text>}
+            {vsBaseline \!= null && vsBaseline > 0 && (
+              <Text style={s.vsText}>−{vsBaseline}%</Text>
             )}
           </View>
         );
@@ -84,3 +80,21 @@ export function TimeProgressionChart({ data, baseline_ms, label }: Props) {
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  empty: { paddingVertical: 24, alignItems: "center" },
+  emptyText: { color: "#D1D5DB", fontSize: 14 },
+  chartLabel: { fontSize: 12, fontWeight: "600", color: "#6B7280", marginBottom: 12 },
+  barsRow: { flexDirection: "row", alignItems: "flex-end", gap: 4 },
+  barCol: { flex: 1, alignItems: "center" },
+  bar: { width: "100%", borderTopLeftRadius: 4, borderTopRightRadius: 4 },
+  axisRow: { flexDirection: "row", gap: 4, marginTop: 4 },
+  axisLabel: { flex: 1, textAlign: "center", fontSize: 8, color: "#D1D5DB" },
+  row: { flexDirection: "row", alignItems: "center", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#F9FAFB" },
+  dateText: { fontSize: 12, color: "#9CA3AF", width: 80 },
+  nameText: { flex: 1, fontSize: 12, color: "#6B7280", marginHorizontal: 8 },
+  timeText: { fontWeight: "700", fontSize: 14, color: "#374151" },
+  prTime: { color: "#22C55E" },
+  prBadge: { fontSize: 12, color: "#86EFAC", marginLeft: 4 },
+  vsText: { fontSize: 12, color: "#22C55E", marginLeft: 8 },
+});

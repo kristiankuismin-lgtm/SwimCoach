@@ -1,4 +1,4 @@
-import { View, Text } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 
 interface Props {
   current: number;
@@ -7,16 +7,30 @@ interface Props {
 
 export function StepIndicator({ current, total }: Props) {
   return (
-    <View className="flex-row items-center gap-2 mb-8">
+    <View style={s.row}>
       {Array.from({ length: total }).map((_, i) => (
         <View
           key={i}
-          className={`h-1.5 flex-1 rounded-full ${
-            i < current ? "bg-brand" : i === current ? "bg-brand opacity-40" : "bg-gray-200"
-          }`}
+          style={[
+            s.dot,
+            i < current
+              ? s.dotDone
+              : i === current
+              ? s.dotCurrent
+              : s.dotEmpty,
+          ]}
         />
       ))}
-      <Text className="text-xs text-gray-400 ml-1">{current + 1}/{total}</Text>
+      <Text style={s.label}>{current + 1}/{total}</Text>
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  row: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 32 },
+  dot: { height: 6, flex: 1, borderRadius: 3 },
+  dotDone: { backgroundColor: "#0EA5E9" },
+  dotCurrent: { backgroundColor: "#0EA5E9", opacity: 0.4 },
+  dotEmpty: { backgroundColor: "#E5E7EB" },
+  label: { fontSize: 12, color: "#9CA3AF", marginLeft: 4 },
+});

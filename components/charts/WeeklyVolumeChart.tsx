@@ -1,7 +1,7 @@
-import { View, Text } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 
 interface WeekData {
-  week: string;   // "vk 22"
+  week: string;
   pool_m: number;
   dryland_min: number;
 }
@@ -17,30 +17,39 @@ export function WeeklyVolumeChart({ weeks }: Props) {
 
   return (
     <View>
-      <View className="flex-row items-end gap-1.5" style={{ height: chartH }}>
+      <View style={[s.barsRow, { height: chartH }]}>
         {weeks.map((w, i) => {
           const barH = Math.max(4, (w.pool_m / maxM) * chartH);
           const isLatest = i === weeks.length - 1;
           return (
-            <View key={i} className="flex-1 items-center justify-end">
-              <Text className="text-gray-300 mb-0.5" style={{ fontSize: 8 }}>
-                {w.pool_m > 0 ? `${Math.round(w.pool_m / 100) / 10}` : ""}
+            <View key={i} style={s.barCol}>
+              <Text style={s.barLabel}>
+                {w.pool_m > 0 ? String(Math.round(w.pool_m / 100) / 10) : ""}
               </Text>
               <View
-                style={{ height: barH, backgroundColor: isLatest ? "#0EA5E9" : "#BFDBFE" }}
-                className="w-full rounded-t-md"
+                style={[
+                  s.bar,
+                  { height: barH, backgroundColor: isLatest ? "#0EA5E9" : "#BFDBFE" },
+                ]}
               />
             </View>
           );
         })}
       </View>
-      <View className="flex-row gap-1.5 mt-1">
+      <View style={s.labelRow}>
         {weeks.map((w, i) => (
-          <Text key={i} className="flex-1 text-center text-gray-300" style={{ fontSize: 8 }}>
-            {w.week}
-          </Text>
+          <Text key={i} style={s.weekLabel}>{w.week}</Text>
         ))}
       </View>
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  barsRow: { flexDirection: "row", alignItems: "flex-end", gap: 6 },
+  barCol: { flex: 1, alignItems: "center", justifyContent: "flex-end" },
+  barLabel: { fontSize: 8, color: "#D1D5DB", marginBottom: 2 },
+  bar: { width: "100%", borderTopLeftRadius: 4, borderTopRightRadius: 4 },
+  labelRow: { flexDirection: "row", gap: 6, marginTop: 4 },
+  weekLabel: { flex: 1, textAlign: "center", fontSize: 8, color: "#D1D5DB" },
+});

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView, TextInput, Alert } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, TextInput, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { StepIndicator } from "@/components/onboarding/StepIndicator";
 import { STROKES, RACE_DISTANCES, type SwimStroke, type RaceDistance } from "@/constants/strokes";
@@ -15,133 +15,98 @@ export default function BaselineScreen() {
   const [stroke, setStroke] = useState<SwimStroke>("vapaa");
   const [distance, setDistance] = useState<RaceDistance>(100);
   const [time, setTime] = useState("");
+  const [addError, setAddError] = useState("");
 
   function addResult() {
-    if (!time.trim()) { Alert.alert("Syötä aika"); return; }
-    const exists = data.baselines.find(
-      b => b.stroke === stroke && b.distance === distance
-    );
-    if (exists) {
-      Alert.alert("Tämä laji+matka on jo lisätty", "Poista ensin aiempi tulos.");
-      return;
-    }
-    const result: BaselineResult = {
-      id: Date.now().toString(),
-      stroke, distance,
-      timeString: time,
-    };
+    if (\!time.trim()) { setAddError("Syötä aika"); return; }
+    const exists = data.baselines.find(b => b.stroke === stroke && b.distance === distance);
+    if (exists) { setAddError("Tämä laji+matka on jo lisätty. Poista ensin aiempi tulos."); return; }
+    setAddError("");
+    const result: BaselineResult = { id: Date.now().toString(), stroke, distance, timeString: time };
     setData({ baselines: [...data.baselines, result] });
     setTime("");
   }
 
   function remove(id: string) {
-    setData({ baselines: data.baselines.filter(b => b.id !== id) });
+    setData({ baselines: data.baselines.filter(b => b.id \!== id) });
   }
 
   return (
-    <ScrollView className="flex-1 bg-white" keyboardShouldPersistTaps="handled">
-      <View className="px-6 pt-14 pb-6">
+    <ScrollView style={s.scroll} keyboardShouldPersistTaps="handled">
+      <View style={s.container}>
         <StepIndicator current={0} total={4} />
-        <Text className="text-2xl font-bold text-gray-900 mb-1">Lähtötaso</Text>
-        <Text className="text-gray-500 mb-6">
+        <Text style={s.title}>Lähtötaso</Text>
+        <Text style={s.subtitle}>
           Lisää aiemmat kisatuloksesi. Näitä käytetään kehityksesi mittaamiseen.
         </Text>
 
-        {/* Lisätyt tulokset */}
         {data.baselines.length > 0 && (
-          <View className="mb-6">
+          <View style={s.list}>
             {data.baselines.map(b => (
-              <View key={b.id} className="flex-row items-center py-3 border-b border-gray-100">
-                <Text className="flex-1 font-medium text-gray-800">
-                  {b.distance}m {STROKES[b.stroke].label}
-                </Text>
-                <Text className="text-brand font-bold mr-4">{b.timeString}</Text>
+              <View key={b.id} style={s.listRow}>
+                <Text style={s.listName}>{b.distance}m {STROKES[b.stroke].label}</Text>
+                <Text style={s.listTime}>{b.timeString}</Text>
                 <TouchableOpacity onPress={() => remove(b.id)}>
-                  <Text className="text-red-400 text-lg">×</Text>
+                  <Text style={s.removeBtn}>×</Text>
                 </TouchableOpacity>
               </View>
             ))}
           </View>
         )}
 
-        {/* Uuden tuloksen syöttö */}
-        <View className="bg-gray-50 rounded-2xl p-4 mb-6">
-          <Text className="font-semibold text-gray-700 mb-3">Lisää tulos</Text>
+        <View style={s.form}>
+          <Text style={s.formTitle}>Lisää tulos</Text>
 
-          {/* Laji */}
-          <Text className="text-xs text-gray-500 mb-2">Uintilaji</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
-            <View className="flex-row gap-2">
-              {STROKE_LIST.map(([s, info]) => (
+          <Text style={s.label}>Uintilaji</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipScroll}>
+            <View style={s.chipRow}>
+              {STROKE_LIST.map(([s2, info]) => (
                 <TouchableOpacity
-                  key={s}
-                  onPress={() => setStroke(s)}
-                  className={`px-4 py-2 rounded-xl border ${
-                    stroke === s
-                      ? "bg-brand border-brand"
-                      : "bg-white border-gray-200"
-                  }`}
+                  key={s2}
+                  onPress={() => setStroke(s2)}
+                  style={[s.chip, stroke === s2 && s.chipActive]}
                 >
-                  <Text className={`font-medium text-sm ${stroke === s ? "text-white" : "text-gray-700"}`}>
-                    {info.label}
-                  </Text>
+                  <Text style={[s.chipText, stroke === s2 && s.chipTextActive]}>{info.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           </ScrollView>
 
-          {/* Matka */}
-          <Text className="text-xs text-gray-500 mb-2">Matka</Text>
-          <View className="flex-row flex-wrap gap-2 mb-3">
+          <Text style={s.label}>Matka</Text>
+          <View style={s.distRow}>
             {RACE_DISTANCES.map(d => (
               <TouchableOpacity
                 key={d}
                 onPress={() => setDistance(d)}
-                className={`px-4 py-2 rounded-xl border ${
-                  distance === d
-                    ? "bg-brand border-brand"
-                    : "bg-white border-gray-200"
-                }`}
+                style={[s.chip, distance === d && s.chipActive]}
               >
-                <Text className={`font-medium text-sm ${distance === d ? "text-white" : "text-gray-700"}`}>
-                  {d}m
-                </Text>
+                <Text style={[s.chipText, distance === d && s.chipTextActive]}>{d}m</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          {/* Aika */}
-          <Text className="text-xs text-gray-500 mb-2">Aika (esim. 1:02.45 tai 58.30)</Text>
-          <View className="flex-row gap-3">
+          <Text style={s.label}>Aika (esim. 1:02.45 tai 58.30)</Text>
+          <View style={s.timeRow}>
             <TextInput
-              className="flex-1 border border-gray-200 rounded-xl px-4 py-3 bg-white text-base"
+              style={s.timeInput}
               placeholder="mm:ss.hh"
               value={time}
-              onChangeText={setTime}
+              onChangeText={v => { setTime(v); setAddError(""); }}
               keyboardType="numeric"
             />
-            <TouchableOpacity
-              className="bg-brand rounded-xl px-5 items-center justify-center"
-              onPress={addResult}
-            >
-              <Text className="text-white font-semibold">+</Text>
+            <TouchableOpacity style={s.addBtn} onPress={addResult}>
+              <Text style={s.addBtnText}>+</Text>
             </TouchableOpacity>
           </View>
+          {addError ? <Text style={s.error}>{addError}</Text> : null}
         </View>
 
-        {/* Navigointi */}
-        <View className="flex-row gap-3">
-          <TouchableOpacity
-            className="flex-1 py-4 items-center border border-gray-200 rounded-2xl"
-            onPress={() => router.back()}
-          >
-            <Text className="text-gray-600 font-medium">← Takaisin</Text>
+        <View style={s.navRow}>
+          <TouchableOpacity style={s.backBtn} onPress={() => router.back()}>
+            <Text style={s.backText}>← Takaisin</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            className="flex-1 bg-brand py-4 items-center rounded-2xl"
-            onPress={() => router.push("/onboarding/volume")}
-          >
-            <Text className="text-white font-semibold">
+          <TouchableOpacity style={s.nextBtn} onPress={() => router.push("/onboarding/volume")}>
+            <Text style={s.nextText}>
               {data.baselines.length === 0 ? "Ohita →" : "Seuraava →"}
             </Text>
           </TouchableOpacity>
@@ -150,3 +115,35 @@ export default function BaselineScreen() {
     </ScrollView>
   );
 }
+
+const s = StyleSheet.create({
+  scroll: { flex: 1, backgroundColor: "#fff" },
+  container: { paddingHorizontal: 24, paddingTop: 56, paddingBottom: 24 },
+  title: { fontSize: 24, fontWeight: "700", color: "#111827", marginBottom: 4 },
+  subtitle: { color: "#6B7280", marginBottom: 24 },
+  list: { marginBottom: 24 },
+  listRow: { flexDirection: "row", alignItems: "center", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#F3F4F6" },
+  listName: { flex: 1, fontWeight: "500", color: "#1F2937" },
+  listTime: { color: "#0EA5E9", fontWeight: "700", marginRight: 16 },
+  removeBtn: { color: "#F87171", fontSize: 20 },
+  form: { backgroundColor: "#F9FAFB", borderRadius: 16, padding: 16, marginBottom: 24 },
+  formTitle: { fontWeight: "600", color: "#374151", marginBottom: 12 },
+  label: { fontSize: 12, color: "#6B7280", marginBottom: 8 },
+  chipScroll: { marginBottom: 12 },
+  chipRow: { flexDirection: "row", gap: 8 },
+  distRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 },
+  chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: "#E5E7EB", backgroundColor: "#fff" },
+  chipActive: { backgroundColor: "#0EA5E9", borderColor: "#0EA5E9" },
+  chipText: { fontWeight: "500", fontSize: 14, color: "#374151" },
+  chipTextActive: { color: "#fff" },
+  timeRow: { flexDirection: "row", gap: 12 },
+  timeInput: { flex: 1, borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: "#fff", fontSize: 16 },
+  addBtn: { backgroundColor: "#0EA5E9", borderRadius: 12, paddingHorizontal: 20, alignItems: "center", justifyContent: "center" },
+  addBtnText: { color: "#fff", fontWeight: "600", fontSize: 18 },
+  error: { color: "#EF4444", fontSize: 12, marginTop: 8 },
+  navRow: { flexDirection: "row", gap: 12 },
+  backBtn: { flex: 1, paddingVertical: 16, alignItems: "center", borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 16 },
+  backText: { color: "#4B5563", fontWeight: "500" },
+  nextBtn: { flex: 1, backgroundColor: "#0EA5E9", paddingVertical: 16, alignItems: "center", borderRadius: 16 },
+  nextText: { color: "#fff", fontWeight: "600" },
+});

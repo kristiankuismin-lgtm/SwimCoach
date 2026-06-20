@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator } from "react-native";
+import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { upsertYearlyGoal } from "@/lib/queries/goals";
@@ -13,24 +13,20 @@ export default function OnboardingDone() {
   const { data, reset } = useOnboardingStore();
   const [status, setStatus] = useState<"saving" | "done" | "error">("saving");
 
-  useEffect(() => {
-    save();
-  }, []);
+  useEffect(() => { save(); }, []);
 
   async function save() {
     try {
-      // Hae swimmer_id käyttäjältä
       const { data: swimmer } = await supabase
         .from("swimmers")
         .select("id")
         .eq("user_id", user?.id)
         .single();
 
-      if (!swimmer) throw new Error("Uimaria ei löydy");
+      if (\!swimmer) throw new Error("Uimaria ei löydy");
 
       const year = new Date().getFullYear();
 
-      // 1. Tallenna vuositavoite
       await upsertYearlyGoal({
         swimmer_id: swimmer.id,
         season_year: year,
@@ -46,7 +42,6 @@ export default function OnboardingDone() {
         target_time_ms: data.goalTimeString ? timeStringToMs(data.goalTimeString) : undefined,
       });
 
-      // 2. Tallenna lähtötason kisatulokset henkilökohtaisina ennätyksinä
       if (data.baselines.length > 0) {
         await supabase.from("personal_records").upsert(
           data.baselines.map(b => ({
@@ -61,7 +56,6 @@ export default function OnboardingDone() {
         );
       }
 
-      // 3. Merkitse onboarding tehdyksi
       await supabase
         .from("swimmers")
         .update({ onboarding_done: true })
@@ -69,8 +63,6 @@ export default function OnboardingDone() {
 
       setStatus("done");
       reset();
-
-      // Siirry dashboardille pienen viiveen jälkeen
       setTimeout(() => router.replace("/swimmer"), 1500);
     } catch (e) {
       console.error(e);
@@ -79,31 +71,40 @@ export default function OnboardingDone() {
   }
 
   return (
-    <View className="flex-1 bg-white items-center justify-center px-6">
+    <View style={s.container}>
       {status === "saving" && (
         <>
-          <ActivityIndicator size="large" color="#0EA5E9" className="mb-4" />
-          <Text className="text-gray-500">Tallennetaan tietojasi...</Text>
+          <ActivityIndicator size="large" color="#0EA5E9" style={s.spinner} />
+          <Text style={s.text}>Tallennetaan tietojasi...</Text>
         </>
       )}
       {status === "done" && (
         <>
-          <Text className="text-6xl mb-6">🎯</Text>
-          <Text className="text-2xl font-bold text-gray-900 mb-2">Kaikki valmista!</Text>
-          <Text className="text-gray-500 text-center">
-            Lähtötasosi ja tavoitteesi on tallennettu. Hyvää kautta!
+          <Text style={s.bigEmoji}>🎯</Text>
+          <Text style={s.doneTitle}>Kaikki valmista\!</Text>
+          <Text style={s.doneText}>
+            Lähtötasosi ja tavoitteesi on tallennettu. Hyvää kautta\!
           </Text>
         </>
       )}
       {status === "error" && (
         <>
-          <Text className="text-5xl mb-4">⚠️</Text>
-          <Text className="text-gray-700 font-semibold mb-2">Tallennus epäonnistui</Text>
-          <Text className="text-gray-400 text-sm text-center">
-            Tarkista nettiyhteys ja yritä uudelleen.
-          </Text>
+          <Text style={s.bigEmoji}>⚠️</Text>
+          <Text style={s.errorTitle}>Tallennus epäonnistui</Text>
+          <Text style={s.errorText}>Tarkista nettiyhteys ja yritä uudelleen.</Text>
         </>
       )}
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#fff", alignItems: "center", justifyContent: "center", paddingHorizontal: 24 },
+  spinner: { marginBottom: 16 },
+  text: { color: "#6B7280" },
+  bigEmoji: { fontSize: 60, marginBottom: 24 },
+  doneTitle: { fontSize: 24, fontWeight: "700", color: "#111827", marginBottom: 8 },
+  doneText: { color: "#6B7280", textAlign: "center" },
+  errorTitle: { color: "#374151", fontWeight: "600", marginBottom: 8 },
+  errorText: { color: "#9CA3AF", fontSize: 14, textAlign: "center" },
+});

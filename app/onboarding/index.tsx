@@ -1,37 +1,48 @@
-import { View, Text, TouchableOpacity } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 
 export default function OnboardingWelcome() {
   const router = useRouter();
 
   return (
-    <View className="flex-1 bg-white px-6 justify-center">
-      <View className="mb-12">
-        <Text className="text-5xl mb-4">🏊</Text>
-        <Text className="text-3xl font-bold text-gray-900 mb-3">
-          Tervetuloa SwimCoachiin
-        </Text>
-        <Text className="text-gray-500 text-base leading-6">
-          Asetetaan ensin lähtötasosi ja vuositavoitteesi.
+    <View style={s.container}>
+      <View style={s.hero}>
+        <Text style={s.emoji}>🏊</Text>
+        <Text style={s.title}>Tervetuloa SwimCoachiin</Text>
+        <Text style={s.subtitle}>
+          Asetetaan ensin lähtötasosi ja vuositavoitteesi.{" "}
           Tämä kestää noin 2 minuuttia.
         </Text>
       </View>
 
-      <View className="gap-3">
+      <View style={s.buttons}>
         <TouchableOpacity
-          className="bg-brand rounded-2xl py-4 items-center"
+          style={s.primary}
           onPress={() => router.push("/onboarding/baseline")}
         >
-          <Text className="text-white font-semibold text-base">Aloitetaan →</Text>
+          <Text style={s.primaryText}>Aloitetaan →</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          className="py-4 items-center"
+          style={s.secondary}
           onPress={() => router.replace("/swimmer")}
         >
-          <Text className="text-gray-400 text-sm">Ohita toistaiseksi</Text>
+          <Text style={s.secondaryText}>Ohita toistaiseksi</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#fff", paddingHorizontal: 24, justifyContent: "center" },
+  hero: { marginBottom: 48 },
+  emoji: { fontSize: 48, marginBottom: 16 },
+  title: { fontSize: 30, fontWeight: "700", color: "#111827", marginBottom: 12 },
+  subtitle: { color: "#6B7280", fontSize: 16, lineHeight: 24 },
+  buttons: { gap: 12 },
+  primary: { backgroundColor: "#0EA5E9", borderRadius: 16, paddingVertical: 16, alignItems: "center" },
+  primaryText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+  secondary: { paddingVertical: 16, alignItems: "center" },
+  secondaryText: { color: "#9CA3AF", fontSize: 14 },
+});
