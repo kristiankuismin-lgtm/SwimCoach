@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { msToTimeString } from "@/lib/utils/time";
 import { PaceBar } from "@/features/swimmer/PaceBar";
+import { ZoneBar } from "@/features/swimmer/ZoneBar";
 import { km, goalPct, tehoScore, trackStatus, type SwimmerSummary, type TrackTone } from "@/features/swimmer/swimmer-card.lib";
 import { swimmerInsights, type InsightTone } from "@/features/swimmer/swimmer-insights.lib";
 import {
@@ -18,7 +19,7 @@ import {
   type ZoneRecord,
 } from "@/features/swimmer/swimmer-detail.lib";
 import { ZONES, ZONE_ORDER } from "@/constants/zones";
-import { color, space, radius, fontFamily } from "@/constants/theme";
+import { color, space, fontFamily } from "@/constants/theme";
 
 interface Props {
   profile: SwimmerProfile;
@@ -171,12 +172,7 @@ function ZonePlan({ actual, target }: { actual: ZoneRecord; target?: ZoneRecord 
   const total = ZONE_ORDER.reduce((s, z) => s + (actual[z] ?? 0), 0);
   return (
     <View>
-      <View style={styles.zoneBarRow}>
-        {ZONE_ORDER.map((z) => {
-          const w = total > 0 ? (actual[z] ?? 0) / total * 100 : 0;
-          return w > 0 ? <View key={z} style={[styles.zoneSegment, { flex: w, backgroundColor: ZONES[z].color }]} /> : null;
-        })}
-      </View>
+      <ZoneBar weights={actual} thickness={10} style={styles.zonePlanBar} />
       <View style={styles.zonePlan}>
         {ZONE_ORDER.map((z) => {
           const p = total > 0 ? Math.round((actual[z] ?? 0) / total * 100) : 0;
@@ -220,8 +216,7 @@ const styles = StyleSheet.create({
   stat: { flex: 1, gap: 2 },
   statValue: { marginTop: 2 },
 
-  zoneBarRow: { flexDirection: "row", height: 10, borderRadius: radius.pill, overflow: "hidden", marginBottom: space.md, gap: 1.5 },
-  zoneSegment: { height: 10 },
+  zonePlanBar: { marginBottom: space.md },
   zoneDot: { width: 8, height: 8, borderRadius: 4 },
   zonePlan: { gap: space.xs + 2 },
   zonePlanRow: { flexDirection: "row", alignItems: "center", gap: space.sm },

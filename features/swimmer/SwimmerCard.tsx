@@ -2,6 +2,8 @@ import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { Text } from "@/components/ui/Text";
 import { Badge } from "@/components/ui/Badge";
 import { PaceBar } from "@/features/swimmer/PaceBar";
+import { ZoneBar } from "@/features/swimmer/ZoneBar";
+import { actualZones } from "@/features/swimmer/swimmer-detail.lib";
 import { color, space, radius, shadow, type as typeStyles } from "@/constants/theme";
 import {
   type SwimmerSummary,
@@ -61,14 +63,17 @@ export function SwimmerCard({ swimmer, lens, rank, seasonProgress, onPress }: Pr
           )}
         </View>
         <Text variant="caption">{hero.caption}</Text>
-        {/* Pace bar anchors to the hero %, so only when the hero IS the goal % */}
+        {/* A bar that visualizes the hero, anchored right under it (lens-specific) */}
         {heroLens === "goal" && hasGoal && (
           <PaceBar
             pct={goalPct(swimmer)}
             markerPct={Math.round(seasonProgress * 100)}
             tone={track.tone}
-            style={styles.heroPace}
+            style={styles.heroBar}
           />
+        )}
+        {heroLens === "workouts" && (
+          <ZoneBar weights={actualZones(swimmer)} style={styles.heroBar} />
         )}
       </View>
 
@@ -121,5 +126,5 @@ const styles = StyleSheet.create({
   statRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   statValue: { ...typeStyles.statValue, fontSize: 17 },
 
-  heroPace: { marginTop: space.sm },
+  heroBar: { marginTop: space.sm },
 });
