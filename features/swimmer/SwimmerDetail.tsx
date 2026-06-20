@@ -1,9 +1,10 @@
-import { View, ScrollView, StyleSheet, type DimensionValue } from "react-native";
+import { View, ScrollView, StyleSheet } from "react-native";
 import { Text } from "@/components/ui/Text";
 import { Header } from "@/components/ui/Header";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { msToTimeString } from "@/lib/utils/time";
+import { PaceBar } from "@/features/swimmer/PaceBar";
 import { km, goalPct, tehoScore, trackStatus, type SwimmerSummary, type TrackTone } from "@/features/swimmer/swimmer-card.lib";
 import { swimmerInsights, type InsightTone } from "@/features/swimmer/swimmer-insights.lib";
 import {
@@ -73,10 +74,7 @@ export function SwimmerDetail({ profile, summary, progression, year, seasonProgr
                 <Text variant="hero">{pct}</Text>
                 <Text variant="display" color={color.inkMuted} style={styles.heroUnit}>%</Text>
               </View>
-              <View style={styles.paceTrack}>
-                <View style={[styles.paceFill, { width: `${Math.min(pct, 100)}%` as DimensionValue, backgroundColor: TONE_COLOR[track?.tone ?? "default"] }]} />
-                <View style={[styles.paceMarker, { left: `${Math.min(expected, 100)}%` as DimensionValue }]} />
-              </View>
+              <PaceBar pct={pct} markerPct={expected} tone={track?.tone ?? "default"} style={styles.heroPace} />
               <Text variant="caption" color={color.inkMuted}>
                 {currentKm} / {targetKm} km · tavoitetahti {expected}%
               </Text>
@@ -213,9 +211,7 @@ const styles = StyleSheet.create({
 
   heroRow: { flexDirection: "row", alignItems: "baseline", gap: space.xs, marginTop: space.xs },
   heroUnit: { transform: [{ translateY: -2 }] },
-  paceTrack: { height: 8, backgroundColor: color.bg, borderRadius: radius.pill, overflow: "hidden", marginTop: space.md, marginBottom: space.sm, position: "relative" },
-  paceFill: { height: 8, borderRadius: radius.pill },
-  paceMarker: { position: "absolute", top: -2, width: 2, height: 12, backgroundColor: color.ink, borderRadius: 1 },
+  heroPace: { marginTop: space.md, marginBottom: space.sm },
 
   insightRow: { flexDirection: "row", alignItems: "flex-start", gap: space.sm, paddingVertical: space.xs + 1 },
   insightDot: { width: 8, height: 8, borderRadius: 4, marginTop: 6 },

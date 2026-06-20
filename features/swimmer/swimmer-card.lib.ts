@@ -6,7 +6,7 @@
  * roster is currently ranked by, so the card always answers the question the coach
  * is looking at. No react / react-native imports — this is pure data → view-model.
  */
-import { ZONES, ZONE_ORDER, type IntensityZone } from "@/constants/zones";
+import { ZONE_ORDER, type IntensityZone } from "@/constants/zones";
 
 /** Row of `swimmer_season_summary` as the card consumes it. */
 export interface SwimmerSummary {
@@ -132,22 +132,6 @@ export function subStats(s: SwimmerSummary, lens: LensKey): SubStat[] {
     { lens: "goal", label: "Tavoite", value: String(goalPct(s)), unit: "%" },
   ];
   return stats.map(({ lens: l, ...rest }) => ({ ...rest, active: l === lens }));
-}
-
-/* ── Zone heat-ramp segments ──────────────────────────────────────────────────── */
-
-export interface ZoneSegment {
-  zone: IntensityZone;
-  pct: number;
-  color: string;
-}
-
-export function zoneSegments(s: SwimmerSummary): ZoneSegment[] {
-  return ZONE_ORDER.map((zone) => ({
-    zone,
-    pct: n(s[ZONE_PCT[zone]] as number),
-    color: ZONES[zone].color,
-  })).filter((seg) => seg.pct > 0);
 }
 
 /* ── On-track signal ──────────────────────────────────────────────────────────── */

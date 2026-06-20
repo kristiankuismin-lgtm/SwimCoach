@@ -1,6 +1,7 @@
 import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { Text } from "@/components/ui/Text";
 import { Badge } from "@/components/ui/Badge";
+import { PaceBar } from "@/features/swimmer/PaceBar";
 import { color, space, radius, shadow, type as typeStyles } from "@/constants/theme";
 import {
   type SwimmerSummary,
@@ -8,7 +9,7 @@ import {
   LENSES,
   heroFor,
   subStats,
-  zoneSegments,
+  goalPct,
   trackStatus,
 } from "@/features/swimmer/swimmer-card.lib";
 
@@ -26,7 +27,7 @@ interface Props {
 export function SwimmerCard({ swimmer, lens, rank, seasonProgress, onPress }: Props) {
   const hero = heroFor(lens, swimmer);
   const track = trackStatus(swimmer, seasonProgress);
-  const segments = zoneSegments(swimmer);
+  const hasGoal = (swimmer.target_pool_m ?? 0) > 0;
   const heroLens = lens === "name" ? "goal" : lens;
   const heroLabel = LENSES.find((l) => l.key === heroLens)?.label ?? "";
   const rows = subStats(swimmer, lens).filter((st) => !st.active);
@@ -81,13 +82,14 @@ export function SwimmerCard({ swimmer, lens, rank, seasonProgress, onPress }: Pr
         ))}
       </View>
 
-      {/* Zone heat-ramp */}
-      {segments.length > 0 && (
-        <View style={styles.zoneBar}>
-          {segments.map((seg) => (
-            <View key={seg.zone} style={[styles.zoneSeg, { flex: seg.pct, backgroundColor: seg.color }]} />
-          ))}
-        </View>
+      {/* Season-goal pace — fill vs. the where-they-should-be marker */}
+      {hasGoal && (
+        <PaceBar
+          pct={goalPct(swimmer)}
+          markerPct={Math.round(seasonProgress * 100)}
+          tone={track.tone}
+          style={styles.pace}
+        />
       )}
     </TouchableOpacity>
   );
@@ -119,13 +121,5 @@ const styles = StyleSheet.create({
   statRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   statValue: { ...typeStyles.statValue, fontSize: 17 },
 
-  zoneBar: {
-    flexDirection: "row",
-    height: 5,
-    borderRadius: radius.pill,
-    overflow: "hidden",
-    marginTop: space.lg,
-    gap: 1.5,
-  },
-  zoneSeg: { height: 5 },
+  pace: { marginTop: space.lg },
 });
