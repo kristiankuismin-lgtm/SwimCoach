@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { useQuery } from "@tanstack/react-query";
+import { authKeys, getCoachContext } from "@/lib/queries/auth";
 import { useAuth } from "./useAuth";
 
 interface CoachContext {
@@ -8,21 +8,18 @@ interface CoachContext {
   ready: boolean;
 }
 
+/** Coach identity (club + coach ids) as server state, resolved once per user. */
 export function useCoachContext(): CoachContext {
   const { user } = useAuth();
-  const [ctx, setCtx] = useState<CoachContext>({ clubId: null, coachId: null, ready: false });
+  const q = useQuery({
+    queryKey: authKeys.coachContext(user?.id ?? ""),
+    enabled: !!user,
+    queryFn: () => getCoachContext(user!.id),
+  });
 
-  useEffect(() => {
-    if (!user) return;
-    async function load() {
-      const { data: u } = await supabase
-        .from("users").select("club_id").eq("id", user!.id).single();
-      const { data: c } = await supabase
-        .from("coaches").select("id").eq("user_id", user!.id).single();
-      setCtx({ clubId: u?.club_id ?? null, coachId: c?.id ?? null, ready: true });
-    }
-    load();
-  }, [user]);
-
-  return ctx;
+  return {
+    clubId: q.data?.clubId ?? null,
+    coachId: q.data?.coachId ?? null,
+    ready: !!user && q.isSuccess,
+  };
 }

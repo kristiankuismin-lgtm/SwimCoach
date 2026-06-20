@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { signOut } from "@/lib/queries/auth";
 import type { Session, User } from "@supabase/supabase-js";
 
 export type UserRole = "coach" | "swimmer" | "club_admin";
@@ -9,6 +10,7 @@ interface AuthState {
   user: User | null;
   role: UserRole | null;
   loading: boolean;
+  signOut: typeof signOut;
 }
 
 export function useAuth(): AuthState {
@@ -43,5 +45,5 @@ export function useAuth(): AuthState {
     setLoading(false);
   }
 
-  return { session, user: session?.user ?? null, role, loading };
+  return { session, user: session?.user ?? null, role, loading, signOut };
 }

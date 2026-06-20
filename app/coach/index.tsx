@@ -1,63 +1,37 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { View, ScrollView, TouchableOpacity, RefreshControl, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Waves } from "lucide-react-native";
 import { SwimmerCard } from "@/features/swimmer/SwimmerCard";
 import { RosterStats } from "@/features/swimmer/RosterStats";
 import { LensTabs } from "@/features/swimmer/LensTabs";
 import { Text } from "@/components/ui/Text";
 import { PaceClock } from "@/components/ui/PaceClock";
+import { useAuth } from "@/hooks/useAuth";
 import { useCoachContext } from "@/hooks/useCoachContext";
-import { useSeasonSummary, swimmerKeys } from "@/lib/queries/swimmers";
+import { useSeasonSummary } from "@/lib/queries/swimmers";
 import { useClubGroups } from "@/lib/queries/groups";
-import { supabase } from "@/lib/supabase";
-import { type SwimmerSummary, type LensKey, rankSwimmers, km } from "@/features/swimmer/swimmer-card.lib";
+import { type LensKey, rankSwimmers } from "@/features/swimmer/swimmer-card.lib";
+import { rosterStats } from "@/features/swimmer/roster.lib";
+import { seasonProgress } from "@/lib/utils/season";
 import { color, space, radius, shadow } from "@/constants/theme";
-
-function seasonProgressNow(): number {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), 0, 1).getTime();
-  const end = new Date(now.getFullYear(), 11, 31).getTime();
-  return (now.getTime() - start) / (end - start);
-}
 
 export default function CoachDashboard() {
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const { signOut } = useAuth();
   const { clubId, ready } = useCoachContext();
   const year = new Date().getFullYear();
-  const seasonProgress = seasonProgressNow();
+  const progress = seasonProgress(new Date());
 
   const [lens, setLens] = useState<LensKey>("goal");
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
 
-  const summaryQ = useSeasonSummary(ready ? clubId : undefined, year);
-  const groupsQ = useClubGroups(ready ? clubId : undefined);
+  const summaryQ = useSeasonSummary(clubId ?? undefined, year);
+  const groupsQ = useClubGroups(clubId ?? undefined);
 
-  // Realtime: a logged attendance changes the season summary — invalidate, don't refetch by hand.
-  useEffect(() => {
-    if (!clubId) return;
-    const channel = supabase
-      .channel("coach-dashboard")
-      .on("postgres_changes", { event: "*", schema: "public", table: "workout_attendance" }, () =>
-        queryClient.invalidateQueries({ queryKey: swimmerKeys.seasonSummary(clubId, year) }),
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [clubId, year, queryClient]);
-
-  const swimmers = (summaryQ.data ?? []) as SwimmerSummary[];
+  const ranked = rankSwimmers(lens, summaryQ.data ?? []);
   const groups = groupsQ.data ?? [];
-  const ranked = rankSwimmers(lens, swimmers);
-
-  const totalPoolKm = km(ranked.reduce((acc, x) => acc + (x.total_pool_m ?? 0), 0));
-  const avgGoalPct = ranked.length > 0
-    ? Math.round(ranked.reduce((acc, x) => {
-        const pct = (x.target_pool_m ?? 0) > 0 ? (x.total_pool_m ?? 0) / (x.target_pool_m ?? 1) * 100 : 0;
-        return acc + pct;
-      }, 0) / ranked.length)
-    : 0;
+  const stats = rosterStats(ranked);
 
   if (!ready || summaryQ.isLoading) {
     return <View style={s.center}><PaceClock size={48} /></View>;
@@ -79,13 +53,13 @@ export default function CoachDashboard() {
       <View style={s.header}>
         <View style={s.headerTop}>
           <Text variant="title">Uimarit</Text>
-          <TouchableOpacity onPress={() => supabase.auth.signOut()} style={s.logoutBtn}>
+          <TouchableOpacity onPress={() => signOut()} style={s.logoutBtn}>
             <Text variant="caption" color={color.inkMuted}>Kirjaudu ulos</Text>
           </TouchableOpacity>
         </View>
 
         <View style={s.section}>
-          <RosterStats totalKm={totalPoolKm} avgGoalPct={avgGoalPct} count={ranked.length} />
+          <RosterStats totalKm={stats.totalKm} avgGoalPct={stats.avgGoalPct} count={stats.count} />
         </View>
 
         {groups.length > 1 && (
@@ -124,7 +98,7 @@ export default function CoachDashboard() {
                 swimmer={sw}
                 lens={lens}
                 rank={i + 1}
-                seasonProgress={seasonProgress}
+                seasonProgress={progress}
                 onPress={() => router.push(`/coach/swimmers/${sw.swimmer_id}`)}
               />
             ))}

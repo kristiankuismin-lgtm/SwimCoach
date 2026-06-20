@@ -1,21 +1,34 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { useRealtimeInvalidation } from "@/lib/realtime/useRealtimeInvalidation";
+import type { SwimmerSummary } from "@/features/swimmer/swimmer-card.lib";
 
 /** Query-key factory — the single source of truth for invalidation. */
 export const swimmerKeys = {
   all: ["swimmers"] as const,
-  seasonSummary: (clubId: string, year: number) => [...swimmerKeys.all, "season-summary", clubId, year] as const,
+  seasonSummary: (clubId: string, year: number) =>
+    [...swimmerKeys.all, "season-summary", clubId, year] as const,
 };
 
-/** Coach roster: every swimmer's season summary for the club. */
+/**
+ * Coach roster: every swimmer's season summary for the club, kept live. A logged
+ * attendance changes the summary, so the hook self-subscribes to
+ * `workout_attendance` and invalidates — the screen never owns a realtime channel.
+ */
 export function useSeasonSummary(clubId: string | undefined, year: number) {
+  useRealtimeInvalidation(
+    "workout_attendance",
+    clubId ? swimmerKeys.seasonSummary(clubId, year) : null,
+  );
   return useQuery({
     queryKey: swimmerKeys.seasonSummary(clubId ?? "", year),
     enabled: !!clubId,
     queryFn: async () => {
       const { data, error } = await getSwimmerSeasonSummary(clubId!, year);
       if (error) throw error;
-      return data ?? [];
+      // `swimmer_season_summary` is a view; generated types are still stubs
+      // (Record<string, unknown>), so assert the domain shape at this boundary.
+      return (data ?? []) as SwimmerSummary[];
     },
   });
 }
@@ -50,8 +63,7 @@ export async function getTimeProgression(swimmerId: string) {
 }
 
 export async function getSwimmerSeasonDetail(swimmerId: string, year: number) {
-  const { supabase: sb } = await import("@/lib/supabase");
-  return (await import("@/lib/supabase")).supabase
+  return supabase
     .from("swimmer_season_summary")
     .select("*")
     .eq("swimmer_id", swimmerId)
@@ -60,8 +72,7 @@ export async function getSwimmerSeasonDetail(swimmerId: string, year: number) {
 }
 
 export async function getRecentWorkouts(swimmerId: string, limit = 10) {
-  const { supabase: sb } = await import("@/lib/supabase");
-  return sb
+  return supabase
     .from("workout_attendance")
     .select(`
       actual_pool_m,
