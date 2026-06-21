@@ -1,4 +1,25 @@
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import type { SwimStroke, RaceDistance } from "@/constants/strokes";
+import type { YearlyGoal } from "@/features/swimmer/swimmer-detail.lib";
+
+export const goalKeys = {
+  all: ["goals"] as const,
+  yearly: (swimmerId: string, year: number) => [...goalKeys.all, swimmerId, year] as const,
+};
+
+/** A swimmer's yearly goal for `year`, or null when none is set. */
+export function useYearlyGoal(swimmerId: string | undefined, year: number) {
+  return useQuery({
+    queryKey: goalKeys.yearly(swimmerId ?? "", year),
+    enabled: !!swimmerId,
+    queryFn: async () => {
+      const { data, error } = await getYearlyGoal(swimmerId!, year);
+      if (error) throw error;
+      return (data ?? null) as YearlyGoal | null;
+    },
+  });
+}
 
 export async function upsertYearlyGoal(goal: {
   swimmer_id: string;
@@ -10,8 +31,8 @@ export async function upsertYearlyGoal(goal: {
   target_pct_vk?: number;
   target_pct_mk?: number;
   target_pct_mak?: number;
-  target_stroke?: string;
-  target_distance?: string;
+  target_stroke?: SwimStroke;
+  target_distance?: RaceDistance;
   target_time_ms?: number;
 }) {
   return supabase
@@ -27,5 +48,5 @@ export async function getYearlyGoal(swimmerId: string, year: number) {
     .select("*")
     .eq("swimmer_id", swimmerId)
     .eq("season_year", year)
-    .single();
+    .maybeSingle();
 }

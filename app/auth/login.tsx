@@ -1,111 +1,62 @@
 import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from "react-native";
-import { supabase } from "@/lib/supabase";
+import { View, Alert, StyleSheet } from "react-native";
+import { Waves } from "lucide-react-native";
+import { Screen } from "@/components/ui/Screen";
+import { Text } from "@/components/ui/Text";
+import { Field } from "@/components/ui/Field";
+import { Button } from "@/components/ui/Button";
+import { signIn } from "@/lib/queries/auth";
+import { color, space } from "@/constants/theme";
+
+/** Seed coach account (see seed.sql / CLAUDE.md). Dev-only shortcut. */
+const DEV_CREDENTIALS = { email: "coach@swimcoach.test", password: "swimcoach" };
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function signIn() {
+  async function submit(creds?: { email: string; password: string }) {
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await signIn(creds?.email ?? email, creds?.password ?? password);
     if (error) Alert.alert("Virhe kirjautumisessa", error.message);
     setLoading(false);
   }
 
+  function devLogin() {
+    setEmail(DEV_CREDENTIALS.email);
+    setPassword(DEV_CREDENTIALS.password);
+    submit(DEV_CREDENTIALS);
+  }
+
   return (
-    <View style={s.root}>
+    <Screen insetTop insetBottom center background={color.surface} style={s.root}>
       <View style={s.logoWrap}>
-        <Text style={s.logo}>🏊</Text>
-        <Text style={s.appName}>SwimCoach</Text>
-        <Text style={s.tagline}>Kirjaudu sisään</Text>
+        <Waves size={48} color={color.primary} strokeWidth={2} />
+        <Text variant="title" color={color.primary}>SwimCoach</Text>
+        <Text variant="body" color={color.inkMuted}>Kirjaudu sisään</Text>
       </View>
 
       <View style={s.form}>
-        <TextInput
-          style={s.input}
+        <Field
           placeholder="Sähköposti"
-          placeholderTextColor="#94a3b8"
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
           autoCapitalize="none"
         />
-        <TextInput
-          style={s.input}
-          placeholder="Salasana"
-          placeholderTextColor="#94a3b8"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        <TouchableOpacity
-          style={[s.btn, loading && s.btnDisabled]}
-          onPress={signIn}
-          disabled={loading}
-        >
-          <Text style={s.btnText}>
-            {loading ? "Kirjaudutaan..." : "Kirjaudu sisään"}
-          </Text>
-        </TouchableOpacity>
+        <Field placeholder="Salasana" value={password} onChangeText={setPassword} secureTextEntry />
+        <Button label="Kirjaudu sisään" onPress={() => submit()} loading={loading} />
+        {__DEV__ && (
+          <Button label="Dev-kirjautuminen" variant="ghost" onPress={devLogin} disabled={loading} />
+        )}
       </View>
-    </View>
+    </Screen>
   );
 }
 
 const s = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#ffffff",
-    justifyContent: "center",
-    paddingHorizontal: 28,
-  },
-  logoWrap: {
-    alignItems: "center",
-    marginBottom: 40,
-  },
-  logo: {
-    fontSize: 56,
-    marginBottom: 8,
-  },
-  appName: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "#0EA5E9",
-    letterSpacing: -0.5,
-  },
-  tagline: {
-    fontSize: 15,
-    color: "#94a3b8",
-    marginTop: 4,
-  },
-  form: {
-    gap: 12,
-  },
-  input: {
-    borderWidth: 1.5,
-    borderColor: "#e2e8f0",
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: "#1e293b",
-    backgroundColor: "#f8fafc",
-  },
-  btn: {
-    backgroundColor: "#0EA5E9",
-    borderRadius: 14,
-    paddingVertical: 15,
-    alignItems: "center",
-    marginTop: 4,
-  },
-  btnDisabled: {
-    opacity: 0.6,
-  },
-  btnText: {
-    color: "#ffffff",
-    fontWeight: "700",
-    fontSize: 16,
-  },
+  root: { paddingHorizontal: space.xxl, gap: space.huge },
+  logoWrap: { alignItems: "center", gap: space.xs },
+  form: { alignSelf: "stretch", gap: space.md },
 });

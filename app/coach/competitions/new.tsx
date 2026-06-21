@@ -1,86 +1,98 @@
 import { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
+import { View, ScrollView, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
+import { Screen } from "@/components/ui/Screen";
+import { Header } from "@/components/ui/Header";
+import { Field } from "@/components/ui/Field";
+import { Chip } from "@/components/ui/Chip";
+import { Button } from "@/components/ui/Button";
+import { Text } from "@/components/ui/Text";
 import { useCoachContext } from "@/hooks/useCoachContext";
-import { createCompetition } from "@/lib/queries/competitions";
+import { useCreateCompetition } from "@/lib/queries/competitions";
+import { color, radius, space } from "@/constants/theme";
 
-const BRAND = "#0EA5E9";
 const LEVELS = ["seura", "piiri", "SM", "kansainvälinen"];
 
 export default function NewCompetitionScreen() {
   const router = useRouter();
   const { clubId } = useCoachContext();
+  const createCompetition = useCreateCompetition();
+
   const [name, setName]         = useState("");
   const [date, setDate]         = useState(new Date().toISOString().split("T")[0]);
   const [location, setLocation] = useState("");
   const [level, setLevel]       = useState("seura");
-  const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState("");
 
   async function save() {
     if (!name.trim()) { setError("Syötä kilpailun nimi."); return; }
     if (!clubId) { setError("Seura ei löydy."); return; }
-    setError(""); setSaving(true);
-    const { data, error: err } = await createCompetition({
-      club_id: clubId, name: name.trim(), competition_date: date,
-      location: location.trim() || undefined, level,
-    });
-    setSaving(false);
-    if (err) { setError(err.message); return; }
-    router.replace(`/coach/competitions/${data.id}`);
+    setError("");
+    try {
+      const created = await createCompetition.mutateAsync({
+        club_id: clubId, name: name.trim(), competition_date: date,
+        location: location.trim() || undefined, level,
+      });
+      router.replace(`/coach/competitions/${created.id}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Tallennus epäonnistui.");
+    }
   }
 
   return (
-    <ScrollView style={s.screen} contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-      <TouchableOpacity onPress={() => router.back()} style={s.back}>
-        <Text style={s.backText}>← Takaisin</Text>
-      </TouchableOpacity>
-      <Text style={s.title}>Uusi kilpailu</Text>
+    <Screen background={color.surface}>
+      <Header title="Uusi kilpailu" onBack={() => router.back()} surface={false} />
+      <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
+        <Field
+          label="Kilpailun nimi *"
+          placeholder="esim. SM-kisat 2026"
+          value={name}
+          onChangeText={setName}
+        />
 
-      <Text style={s.label}>Kilpailun nimi *</Text>
-      <TextInput style={s.input} placeholder="esim. SM-kisat 2026" value={name} onChangeText={setName} />
+        <Field
+          label="Päivämäärä *"
+          placeholder="vvvv-kk-pp"
+          value={date}
+          onChangeText={setDate}
+          keyboardType="numeric"
+        />
 
-      <Text style={s.label}>Päivämäärä *</Text>
-      <TextInput style={s.input} placeholder="vvvv-kk-pp" value={date} onChangeText={setDate} keyboardType="numeric" />
+        <Field
+          label="Paikka"
+          placeholder="esim. Helsinki"
+          value={location}
+          onChangeText={setLocation}
+        />
 
-      <Text style={s.label}>Paikka</Text>
-      <TextInput style={s.input} placeholder="esim. Helsinki" value={location} onChangeText={setLocation} />
+        <View style={s.field}>
+          <Text variant="label">Taso</Text>
+          <View style={s.levelRow}>
+            {LEVELS.map((l) => (
+              <Chip key={l} label={l} active={level === l} onPress={() => setLevel(l)} />
+            ))}
+          </View>
+        </View>
 
-      <Text style={s.label}>Taso</Text>
-      <View style={s.levelRow}>
-        {LEVELS.map(l => (
-          <TouchableOpacity key={l} style={[s.levelBtn, level === l && s.levelBtnActive]} onPress={() => setLevel(l)}>
-            <Text style={[s.levelBtnText, level === l && s.levelBtnTextActive]}>{l}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+        {error ? (
+          <View style={s.errorBox}>
+            <Text variant="caption" color={color.risk}>{error}</Text>
+          </View>
+        ) : null}
 
-      {error ? <View style={s.errorBox}><Text style={s.errorText}>{error}</Text></View> : null}
-
-      <TouchableOpacity style={s.saveBtn} onPress={save} disabled={saving}>
-        <Text style={s.saveBtnText}>{saving ? "Luodaan..." : "Luo kilpailu → syötä tulokset"}</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <Button
+          label={createCompetition.isPending ? "Luodaan..." : "Luo kilpailu → syötä tulokset"}
+          onPress={save}
+          loading={createCompetition.isPending}
+        />
+      </ScrollView>
+    </Screen>
   );
 }
 
 const s = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#fff" },
-  content: { paddingHorizontal: 24, paddingTop: 56, paddingBottom: 40 },
-  back: { marginBottom: 16 },
-  backText: { color: BRAND, fontSize: 14 },
-  title: { fontSize: 24, fontWeight: "700", color: "#0F172A", marginBottom: 24 },
-  label: { fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 6 },
-  input: { borderWidth: 1.5, borderColor: "#E2E8F0", borderRadius: 12, paddingHorizontal: 16,
-    paddingVertical: 12, fontSize: 15, color: "#0F172A", marginBottom: 20 },
-  levelRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 32 },
-  levelBtn: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 12,
-    borderWidth: 1.5, borderColor: "#E2E8F0", backgroundColor: "#fff" },
-  levelBtnActive: { backgroundColor: BRAND, borderColor: BRAND },
-  levelBtnText: { fontSize: 13, fontWeight: "500", color: "#374151" },
-  levelBtnTextActive: { color: "#fff" },
-  errorBox: { backgroundColor: "#FEF2F2", borderRadius: 10, padding: 12, marginBottom: 16 },
-  errorText: { color: "#DC2626", fontSize: 13 },
-  saveBtn: { backgroundColor: BRAND, borderRadius: 16, paddingVertical: 16, alignItems: "center" },
-  saveBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  content: { paddingHorizontal: space.xxl, paddingTop: space.lg, paddingBottom: space.huge, gap: space.lg },
+  field: { gap: space.sm },
+  levelRow: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
+  errorBox: { backgroundColor: color.riskWash, borderRadius: radius.sm, padding: space.md },
 });
